@@ -1,0 +1,78 @@
+services:
+  postgresql:
+    container_name: ms_pg_sql
+    image: postgres
+    environment:
+      POSTGRES_USER: adil
+      POSTGRES_PASSWORD: adil
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - "5432:5432"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+
+  pgadmin:
+    container_name: ms_pgadmin
+    image: dpage/pgadmin4
+    environment:
+      PGADMIN_DEFAULT_EMAIL: ${PGADMIN_DEFAULT_EMAIL:-pgadmin4@pgadmin.org}
+      PGADMIN_DEFAULT_PASSWORD: ${PGADMIN_DEFAULT_PASSWORD:-admin}
+      PGADMIN_CONFIG_SERVER_MODE: 'False'
+    volumes:
+      - pgadmin:/var/lib/pgadmin
+    ports:
+      - "5050:80"
+    networks:
+      - microservices-net
+    restart: unless-stopped
+
+  mongodb:
+    image: mongo
+    container_name: mongo_db
+    ports:
+      - 27017:27017
+    volumes:
+      - mongo:/data
+    environment:
+      - MONGO_INITDB_ROOT_USERNAME=adil
+      - MONGO_INITDB_ROOT_PASSWORD=adil
+#    networks:                          # ✅ ADD THIS
+#      - microservices-net
+
+  mongo-express:
+    image: mongo-express
+    container_name: mongo_express
+    restart: always
+    ports:
+      - 8081:8081
+    environment:
+      - ME_CONFIG_MONGODB_ADMINUSERNAME=adil
+      - ME_CONFIG_MONGODB_ADMINPASSWORD=adil
+      - ME_CONFIG_MONGODB_SERVER=mongo_db   # ✅ Use container_name, not service name
+      - ME_CONFIG_BASICAUTH_USERNAME=adil   # ✅ Web UI login (optional but recommended)
+      - ME_CONFIG_BASICAUTH_PASSWORD=adil
+#    networks:                          # ✅ ADD THIS
+#      - microservices-net
+    depends_on:
+      - mongodb                        # ✅ Wait for MongoDB to start first
+
+  mail-dev:
+    container_name: ms-mail-dev
+    image: maildev/maildev
+    ports:
+      - 1080:1080
+      - 1025:1025
+#    networks:                          # ✅ ADD THIS (optional, but consistent)
+#      - microservices-net
+
+networks:
+  microservices-net:
+    driver: bridge
+
+volumes:
+  postgres:
+  pgadmin:
+  mongo:
